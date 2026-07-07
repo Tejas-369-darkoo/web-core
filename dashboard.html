@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SaaS Web Analytics Dashboard</title>
+    <!-- Google Font: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-dark: #090d16;
+            --panel-bg: rgba(22, 28, 45, 0.6);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.15);
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
+            --font-inter: 'Inter', -apple-system, sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-inter);
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+            padding-bottom: 60px;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.08) 0px, transparent 50%);
+        }
+
+        .container {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        /* --- HEADER AREA --- */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 35px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .brand-section h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brand-section h1 span {
+            color: var(--primary);
+        }
+
+        .brand-section p {
+            font-size: 0.9rem;
+            color: var(--text-sub);
+            margin-top: 4px;
+        }
+
+        .controls-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .filter-select {
+            background-color: rgba(30, 41, 59, 0.6);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            outline: none;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .filter-select:hover {
+            border-color: var(--primary);
+        }
+
+        .btn-action {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 14px var(--primary-glow);
+        }
+
+        .btn-action:hover {
+            background-color: #5053e1;
+            transform: translateY(-1px);
+        }
+
+        .status-badge {
+            background-color: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: var(--accent-green);
+            font-size: 0.8rem;
+            padding: 6px 12px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 600;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--accent-green);
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 1.8s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.9); opacity: 0.4; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0.4; }
+        }
+
+        /* --- STATS CARDS --- */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(10px);
+            padding: 24px;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s, border-color 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(99, 102, 241, 0.25);
+        }
+
+        .stat-card-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-sub);
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .stat-card-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--text-main);
+            line-height: 1.2;
+        }
+
+        .stat-card-footer {
+            font-size: 0.8rem;
+            color: var(--text-sub);
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* --- CHARTS GRID --- */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 1024px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 24px;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+        }
+
+        .panel-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 320px;
+        }
+
+        /* --- THREE COLUMNS DETAILS --- */
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 1024px) {
+            .details-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Scrollable List Items */
+        .feed-container {
+            max-height: 350px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        /* Custom Scrollbar */
+        .feed-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        .feed-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .feed-container::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        .feed-item {
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            transition: background 0.2s;
+            border-radius: 8px;
+            margin-bottom: 4px;
+        }
+
+        .feed-item:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .feed-item:last-child {
+            border-bottom: none;
+        }
+
+        .item-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex-grow: 1;
+            max-width: 70%;
+        }
+
+        .item-title {
+            font-weight: 600;
+            color: var(--text-main);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .item-meta {
+            color: var(--text-sub);
+            font-size: 0.75rem;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-load { background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); }
+        .badge-click { background: rgba(99, 102, 241, 0.15); color: var(--primary); }
+        .badge-scroll { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); }
+        .badge-exit { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); }
+
+        /* Ranked List */
+        .ranked-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.9rem;
+        }
+        .ranked-item:last-child {
+            border-bottom: none;
+        }
+        .rank-label {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .rank-number {
+            width: 24px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .rank-text {
+            font-weight: 500;
+        }
+        .rank-value {
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        /* --- SESSIONS SECTION --- */
+        .sessions-table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            font-weight: 600;
+            color: var(--text-sub);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background-color: rgba(255, 255, 255, 0.01);
+        }
+
+        .session-user {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent-blue) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.8rem;
+            color: white;
+        }
+
+        .user-type-badge {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-sub);
+        }
+        .user-type-badge.new {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--accent-green);
+        }
+
+        /* Rotating spinner */
+        .spin {
+            animation: rotate 1s linear infinite;
+        }
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- --- HEADER --- -->
+        <header>
+            <div class="brand-section">
+                <h1>🕵️ SaaS<span>Analytics</span></h1>
+                <p>Full-stack web user analytics tracker</p>
+            </div>
+            
+            <div class="controls-section">
+                <div class="status-badge">
+                    <span class="status-dot"></span>
+                    <span>Live Tracking</span>
+                </div>
+                
+                <select class="filter-select" id="dateFilter" onchange="applyFilters()">
+                    <option value="all">All Time</option>
+                    <option value="today">Today</option>
+                    <option value="7days" selected>Last 7 Days</option>
+                    <option value="30days">Last 30 Days</option>
+                </select>
+                
+                <button class="btn-action" onclick="reloadData(true)">
+                    <span id="refreshIcon">🔄</span>
+                    <span>Refresh</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- --- STATS CARD GRID --- -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-card-title">Total Visits</span>
+                <span class="stat-card-value" id="statVisits">0</span>
+                <span class="stat-card-footer" id="statVisitsFooter">Total events logged</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-card-title">Unique Visitors</span>
+                <span class="stat-card-value" id="statUnique">0</span>
+                <span class="stat-card-footer" id="statUniqueFooter">Distinct browser sessions</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-card-title">Avg. Time on Page</span>
+                <span class="stat-card-value" id="statTime">0s</span>
+                <span class="stat-card-footer" id="statTimeFooter">From session exit events</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-card-title">Image Clicks</span>
+                <span class="stat-card-value" id="statClicks">0</span>
+                <span class="stat-card-footer" id="statClicksFooter">Clicks on target image</span>
+            </div>
+        </div>
+
+        <!-- --- CHARTS GRID --- -->
+        <div class="charts-grid">
+            <div class="panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">📈 Daily Traffic</h2>
+                </div>
+                <div class="chart-container">
+                    <canvas id="visitsChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">📊 Device Platform Distribution</h2>
+                </div>
+                <div class="chart-container">
+                    <canvas id="devicesChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- --- DETAILS THIRD-GRID --- -->
+        <div class="details-grid">
+            <!-- 1. Scroll & Engagement -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">🎯 Scroll Milestone Reached</h2>
+                </div>
+                <div class="feed-container" id="scrollContainer">
+                    <!-- Javascript injected ranked list -->
+                </div>
+            </div>
+
+            <!-- 2. Top Elements Clicked -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">🔥 Top Clicked Elements</h2>
+                </div>
+                <div class="feed-container" id="elementsContainer">
+                    <!-- Javascript injected list -->
+                </div>
+            </div>
+
+            <!-- 3. Top Active Users -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">💎 Most Active Visitors</h2>
+                </div>
+                <div class="feed-container" id="usersContainer">
+                    <!-- Javascript injected feed -->
+                </div>
+            </div>
+        </div>
+
+        <!-- --- USER SESSIONS LIST --- -->
+        <div class="panel" style="margin-bottom: 0;">
+            <div class="panel-header">
+                <h2 class="panel-title">👥 Active Session Profiles</h2>
+            </div>
+            <div class="sessions-table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>User Details</th>
+                            <th>IP Address</th>
+                            <th>Location</th>
+                            <th>Platform</th>
+                            <th>Browser</th>
+                            <th>Time Spent</th>
+                            <th>Max Scroll</th>
+                            <th>Events Logged</th>
+                            <th>Last Active</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sessionsTableBody">
+                        <tr>
+                            <td colspan="9" style="text-align: center; color: var(--text-sub);">Loading session logs...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let rawStats = null;
+        let rawRecent = [];
+        let rawSessions = [];
+        
+        let visitsChartInstance = null;
+        let devicesChartInstance = null;
+
+        // Apply visual rotation classes
+        function startSpin() {
+            document.getElementById('refreshIcon').classList.add('spin');
+        }
+        function stopSpin() {
+            document.getElementById('refreshIcon').classList.remove('spin');
+        }
+
+        async function reloadData(isManual = false) {
+            if (isManual) startSpin();
+            try {
+                const [statsRes, recentRes, sessionsRes] = await Promise.all([
+                    fetch('/api/stats'),
+                    fetch('/api/recent'),
+                    fetch('/api/sessions')
+                ]);
+
+                rawStats = await statsRes.json();
+                rawRecent = await recentRes.json();
+                rawSessions = await sessionsRes.json();
+
+                renderDashboard();
+            } catch (error) {
+                console.error("Dashboard loading failed:", error);
+            } finally {
+                if (isManual) stopSpin();
+            }
+        }
+
+        function filterLogsByDate(logs, filterType) {
+            if (filterType === 'all') return logs;
+            
+            const now = new Date();
+            let limitDate = new Date();
+
+            if (filterType === 'today') {
+                limitDate.setHours(0,0,0,0);
+            } else if (filterType === '7days') {
+                limitDate.setDate(now.getDate() - 7);
+            } else if (filterType === '30days') {
+                limitDate.setDate(now.getDate() - 30);
+            }
+
+            return logs.filter(log => {
+                const ts = log.timestamp || log.startTime;
+                return ts && new Date(ts) >= limitDate;
+            });
+        }
+
+        function renderDashboard() {
+            const filterType = document.getElementById('dateFilter').value;
+            
+            // Filter recent logs and sessions locally
+            const filteredRecent = filterLogsByDate(rawRecent, filterType);
+            const filteredSessions = filterLogsByDate(rawSessions, filterType);
+
+            // Re-aggregate filtered statistics
+            const totalVisits = filteredRecent.length;
+            const uniqueUsers = new Set(filteredRecent.map(l => l.userId)).size;
+            const pageLoads = filteredRecent.filter(l => l.trigger === 'Page Load').length;
+            const imageClicks = filteredRecent.filter(l => l.trigger === 'Image Click').length;
+            
+            // Average Time spent on page
+            let avgTime = 0;
+            const exitLogs = filteredRecent.filter(l => l.timeOnPage !== undefined && l.timeOnPage > 0);
+            if (exitLogs.length > 0) {
+                avgTime = Math.round(exitLogs.reduce((acc, l) => acc + l.timeOnPage, 0) / exitLogs.length);
+            }
+
+            // Update stats DOM
+            document.getElementById('statVisits').textContent = totalVisits;
+            document.getElementById('statUnique').textContent = uniqueUsers;
+            document.getElementById('statTime').textContent = avgTime + 's';
+            document.getElementById('statClicks').textContent = imageClicks;
+
+            // Render Charts
+            renderVisitsChart(filteredRecent);
+            renderDevicesChart(filteredRecent);
+
+            // Render Details Panel lists
+            renderScrollPanel(filteredRecent);
+            renderClickedElementsPanel(filteredRecent);
+            renderActiveUsersPanel(filteredRecent);
+
+            // Render Session Profiles Table
+            renderSessionsTable(filteredSessions);
+        }
+
+        function applyFilters() {
+            if (rawRecent.length > 0) {
+                renderDashboard();
+            }
+        }
+
+        // --- CHARTS INJECTIONS ---
+
+        function renderVisitsChart(logs) {
+            // Group logs by YYYY-MM-DD
+            const visitsMap = {};
+            const daysCount = 7;
+            
+            // Pre-populate last 7 days of dates
+            for (let i = daysCount - 1; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                const dateStr = date.toISOString().split('T')[0];
+                visitsMap[dateStr] = 0;
+            }
+
+            logs.forEach(log => {
+                const dateStr = log.timestamp.split('T')[0];
+                if (visitsMap[dateStr] !== undefined) {
+                    visitsMap[dateStr]++;
+                } else if (document.getElementById('dateFilter').value !== '7days') {
+                    // Include any other dates if filter matches longer spans
+                    visitsMap[dateStr] = (visitsMap[dateStr] || 0) + 1;
+                }
+            });
+
+            const labels = Object.keys(visitsMap).sort();
+            const data = labels.map(l => visitsMap[l]);
+
+            if (visitsChartInstance) visitsChartInstance.destroy();
+
+            const ctx = document.getElementById('visitsChart').getContext('2d');
+            const primaryGlow = 'rgba(99, 102, 241, 0.2)';
+            
+            visitsChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Visits',
+                        data: data,
+                        borderColor: '#6366f1',
+                        borderWidth: 3,
+                        backgroundColor: 'rgba(99, 102, 241, 0.05)',
+                        fill: true,
+                        tension: 0.35,
+                        pointBackgroundColor: '#6366f1',
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { color: 'rgba(255, 255, 255, 0.04)' }, ticks: { color: '#94a3b8' } },
+                        y: { grid: { color: 'rgba(255, 255, 255, 0.04)' }, ticks: { color: '#94a3b8', stepSize: 1 } }
+                    }
+                }
+            });
+        }
+
+        function renderDevicesChart(logs) {
+            const devicesMap = {};
+            logs.forEach(log => {
+                const platform = log.deviceInfo?.platform || 'Unknown';
+                devicesMap[platform] = (devicesMap[platform] || 0) + 1;
+            });
+
+            const labels = Object.keys(devicesMap);
+            const data = labels.map(l => devicesMap[l]);
+
+            if (devicesChartInstance) devicesChartInstance.destroy();
+
+            const ctx = document.getElementById('devicesChart').getContext('2d');
+            devicesChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: ['#6366f1', '#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#94a3b8'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: '#94a3b8', font: { family: 'Inter' }, boxWidth: 12 }
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
+        }
+
+        // --- DETAILS PANELS INJECTIONS ---
+
+        function renderScrollPanel(logs) {
+            const scrollLogs = logs.filter(l => l.trigger === 'Scroll Depth Crossing');
+            const milestones = { 25: 0, 50: 0, 75: 0, 100: 0 };
+            
+            scrollLogs.forEach(l => {
+                const ms = l.eventMetadata?.milestone;
+                if (ms && milestones[ms] !== undefined) {
+                    milestones[ms]++;
+                }
+            });
+
+            const scrollContainer = document.getElementById('scrollContainer');
+            scrollContainer.innerHTML = Object.entries(milestones).map(([m, count]) => `
+                <div class="ranked-item">
+                    <div class="rank-label">
+                        <span class="rank-number">${m}%</span>
+                        <span class="rank-text">Reached milestone depth</span>
+                    </div>
+                    <span class="rank-value">${count} users</span>
+                </div>
+            `).join('');
+        }
+
+        function renderClickedElementsPanel(logs) {
+            const clickLogs = logs.filter(l => l.trigger === 'Element Click' || l.trigger === 'Image Click');
+            const clickCounts = {};
+
+            clickLogs.forEach(log => {
+                const el = log.eventMetadata?.element || 'unknown';
+                const id = log.eventMetadata?.id ? `#${log.eventMetadata.id}` : '';
+                const txt = log.eventMetadata?.text ? ` ("${log.eventMetadata.text}")` : '';
+                const key = `${el}${id}${txt}`;
+                clickCounts[key] = (clickCounts[key] || 0) + 1;
+            });
+
+            const sorted = Object.entries(clickCounts).sort((a,b) => b[1] - a[1]).slice(0, 5);
+            const container = document.getElementById('elementsContainer');
+
+            if (sorted.length === 0) {
+                container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-sub);">No clicks registered.</div>`;
+                return;
+            }
+
+            container.innerHTML = sorted.map(([key, count], index) => `
+                <div class="ranked-item">
+                    <div class="rank-label">
+                        <span class="rank-number">${index + 1}</span>
+                        <span class="rank-text" style="word-break: break-all;">${key}</span>
+                    </div>
+                    <span class="rank-value">${count} clicks</span>
+                </div>
+            `).join('');
+        }
+
+        function renderActiveUsersPanel(logs) {
+            const userCounts = {};
+            logs.forEach(l => {
+                userCounts[l.userId] = (userCounts[l.userId] || 0) + 1;
+            });
+
+            const sorted = Object.entries(userCounts).sort((a,b) => b[1] - a[1]).slice(0, 5);
+            const container = document.getElementById('usersContainer');
+
+            if (sorted.length === 0) {
+                container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-sub);">No active users.</div>`;
+                return;
+            }
+
+            container.innerHTML = sorted.map(([uid, count]) => {
+                const uLogs = logs.filter(l => l.userId === uid);
+                const last = uLogs[0];
+                const loc = last?.geolocation?.city ? `${last.geolocation.city}, ${last.geolocation.country}` : 'Unknown';
+                return `
+                    <div class="feed-item">
+                        <div class="item-info">
+                            <span class="item-title">${uid.substring(0, 15)}...</span>
+                            <span class="item-meta">📍 ${loc}</span>
+                        </div>
+                        <span class="badge badge-click">${count} events</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderSessionsTable(sessions) {
+            const tbody = document.getElementById('sessionsTableBody');
+            
+            if (sessions.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:var(--text-sub);">No sessions matching filter.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = sessions.map(s => {
+                const sTime = new Date(s.startTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                const initials = s.userId ? s.userId.replace('user_', '').substring(0,2).toUpperCase() : 'U';
+                return `
+                    <tr>
+                        <td>
+                            <div class="session-user">
+                                <div class="user-avatar">${initials}</div>
+                                <div style="display:flex; flex-direction:column; gap:2px;">
+                                    <span style="font-weight:600; font-size:0.85rem;">${s.userId.substring(0, 12)}...</span>
+                                    <span class="user-type-badge ${s.userType}">${s.userType}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="font-family:monospace; font-size:0.8rem;">${s.ip}</td>
+                        <td>${s.location}</td>
+                        <td>${s.device}</td>
+                        <td>
+                            <span style="font-weight:500; font-size:0.85rem;">${s.browser}</span>
+                        </td>
+                        <td>
+                            <span style="font-weight:600; color:var(--primary);">${s.timeSpent}s</span>
+                        </td>
+                        <td>
+                            <span style="font-weight:600; color:var(--accent-green);">${s.maxScroll}%</span>
+                        </td>
+                        <td style="font-weight:500;">${s.eventsCount}</td>
+                        <td style="color:var(--text-sub); font-size:0.8rem;">${sTime}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Init and refresh cycles
+        reloadData();
+        setInterval(() => reloadData(false), 5000);
+    </script>
+</body>
+</html>

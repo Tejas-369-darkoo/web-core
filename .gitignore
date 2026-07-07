@@ -1,0 +1,4 @@
+node_modules
+log_data.txt
+.env
+.DS_Store
