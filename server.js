@@ -269,11 +269,39 @@ app.get('/api/sessions', (req, res) => {
         if (log.maxScroll && log.maxScroll > sessions[sid].maxScroll) {
             sessions[sid].maxScroll = log.maxScroll;
         }
+
+        // Prefer a real (non-Unknown) location/IP from any event in this session,
+        // so a later event lacking geolocation doesn't wipe out a known value.
+        const candidateLocation = log.geolocation?.city
+            ? `${log.geolocation.city}, ${log.geolocation.country}`
+            : null;
+        if (isUnknownLocation(sessions[sid].location) && candidateLocation && !isUnknownLocation(candidateLocation)) {
+            sessions[sid].location = candidateLocation;
+        }
+
+        const candidateIP = log.publicIP || log.serverIP;
+        if (isUnknownIP(sessions[sid].ip) && candidateIP && !isUnknownIP(candidateIP)) {
+            sessions[sid].ip = candidateIP;
+        }
     });
 
     const sessionList = Object.values(sessions).sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
     res.json(sessionList.slice(0, 30));
 });
+
+// A location string is "unknown" if it has no real, known parts (e.g. "Unknown, Unknown").
+function isUnknownLocation(loc) {
+    if (!loc) return true;
+    const parts = String(loc).split(',').map(p => p.trim()).filter(p => p && p.toLowerCase() !== 'unknown');
+    return parts.length === 0;
+}
+
+// An IP is "unknown" if it is missing, the placeholder, or a loopback address.
+function isUnknownIP(ip) {
+    if (!ip) return true;
+    const s = String(ip).trim().toLowerCase();
+    return s === '' || s === 'ip_unknown' || s === 'unknown' || s === '::1' || s === '127.0.0.1' || s === '::ffff:127.0.0.1';
+}
 
 function parseBrowser(ua) {
     if (ua.includes('Edg/')) return 'Edge';
