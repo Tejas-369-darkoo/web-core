@@ -6,8 +6,6 @@
     <title>SaaS Web Analytics Dashboard</title>
     <!-- Google Font: Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Chart.js CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --bg-dark: #090d16;
@@ -438,6 +436,129 @@
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
+
+        /* --- PROFILES --- */
+        .panel-sub {
+            font-size: 0.8rem;
+            color: var(--text-sub);
+        }
+
+        .profiles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 16px;
+        }
+
+        .profile-card {
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            transition: border-color 0.3s, transform 0.3s;
+        }
+
+        .profile-card:hover {
+            border-color: rgba(99, 102, 241, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .profile-head {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .profile-avatar {
+            width: 40px;
+            height: 40px;
+            flex-shrink: 0;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent-blue) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: white;
+        }
+
+        .profile-id {
+            font-weight: 600;
+            font-size: 0.85rem;
+            word-break: break-all;
+        }
+
+        .badge-type {
+            align-self: flex-start;
+            font-size: 0.68rem;
+            padding: 2px 8px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-sub);
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .badge-type.new {
+            background: rgba(16, 185, 129, 0.12);
+            color: var(--accent-green);
+        }
+
+        .profile-rows {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .profile-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            font-size: 0.82rem;
+        }
+        .profile-row .label { color: var(--text-sub); flex-shrink: 0; }
+        .profile-row .value {
+            color: var(--text-main);
+            font-weight: 500;
+            text-align: right;
+            word-break: break-all;
+        }
+        .profile-row .value.mono { font-family: monospace; }
+
+        .profile-stats {
+            display: flex;
+            gap: 10px;
+        }
+        .profile-stat {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;
+        }
+        .profile-stat .num {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+        .profile-stat .lbl {
+            font-size: 0.68rem;
+            color: var(--text-sub);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
+        }
+
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            color: var(--text-sub);
+            padding: 40px;
+        }
     </style>
 </head>
 <body>
@@ -487,105 +608,29 @@
                 <span class="stat-card-footer" id="statTimeFooter">From session exit events</span>
             </div>
             <div class="stat-card">
-                <span class="stat-card-title">Image Clicks</span>
-                <span class="stat-card-value" id="statClicks">0</span>
-                <span class="stat-card-footer" id="statClicksFooter">Clicks on target image</span>
+                <span class="stat-card-title">👥 Active Sessions</span>
+                <span class="stat-card-value" id="statSessions">0</span>
+                <span class="stat-card-footer" id="statSessionsFooter">Distinct visitor sessions</span>
             </div>
         </div>
 
-        <!-- --- CHARTS GRID --- -->
-        <div class="charts-grid">
-            <div class="panel">
-                <div class="panel-header">
-                    <h2 class="panel-title">📈 Daily Traffic</h2>
-                </div>
-                <div class="chart-container">
-                    <canvas id="visitsChart"></canvas>
-                </div>
-            </div>
-            
-            <div class="panel">
-                <div class="panel-header">
-                    <h2 class="panel-title">📊 Device Platform Distribution</h2>
-                </div>
-                <div class="chart-container">
-                    <canvas id="devicesChart"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <!-- --- DETAILS THIRD-GRID --- -->
-        <div class="details-grid">
-            <!-- 1. Scroll & Engagement -->
-            <div class="panel">
-                <div class="panel-header">
-                    <h2 class="panel-title">🎯 Scroll Milestone Reached</h2>
-                </div>
-                <div class="feed-container" id="scrollContainer">
-                    <!-- Javascript injected ranked list -->
-                </div>
-            </div>
-
-            <!-- 2. Top Elements Clicked -->
-            <div class="panel">
-                <div class="panel-header">
-                    <h2 class="panel-title">🔥 Top Clicked Elements</h2>
-                </div>
-                <div class="feed-container" id="elementsContainer">
-                    <!-- Javascript injected list -->
-                </div>
-            </div>
-
-            <!-- 3. Top Active Users -->
-            <div class="panel">
-                <div class="panel-header">
-                    <h2 class="panel-title">💎 Most Active Visitors</h2>
-                </div>
-                <div class="feed-container" id="usersContainer">
-                    <!-- Javascript injected feed -->
-                </div>
-            </div>
-        </div>
-
-        <!-- --- USER SESSIONS LIST --- -->
+        <!-- --- PROFILES --- -->
         <div class="panel" style="margin-bottom: 0;">
             <div class="panel-header">
-                <h2 class="panel-title">👥 Active Session Profiles</h2>
+                <h2 class="panel-title">Profiles</h2>
+                <span class="panel-sub" id="profilesCount"></span>
             </div>
-            <div class="sessions-table-wrapper">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>User Details</th>
-                            <th>IP Address</th>
-                            <th>Location</th>
-                            <th>Platform</th>
-                            <th>Browser</th>
-                            <th>Time Spent</th>
-                            <th>Max Scroll</th>
-                            <th>Events Logged</th>
-                            <th>Last Active</th>
-                        </tr>
-                    </thead>
-                    <tbody id="sessionsTableBody">
-                        <tr>
-                            <td colspan="9" style="text-align: center; color: var(--text-sub);">Loading session logs...</td>
-                        </tr>
-                    </tbody>
-                </table>
+            <div class="profiles-grid" id="profilesGrid">
+                <div class="empty-state">Loading profiles...</div>
             </div>
         </div>
     </div>
 
     <script>
-        let rawStats = null;
         let rawRecent = [];
         let rawSessions = [];
-        
-        let visitsChartInstance = null;
-        let devicesChartInstance = null;
 
-        // Apply visual rotation classes
+        // Rotation on the manual refresh button
         function startSpin() {
             document.getElementById('refreshIcon').classList.add('spin');
         }
@@ -593,16 +638,15 @@
             document.getElementById('refreshIcon').classList.remove('spin');
         }
 
+        // Fetch live data from the backend APIs
         async function reloadData(isManual = false) {
             if (isManual) startSpin();
             try {
-                const [statsRes, recentRes, sessionsRes] = await Promise.all([
-                    fetch('/api/stats'),
+                const [recentRes, sessionsRes] = await Promise.all([
                     fetch('/api/recent'),
                     fetch('/api/sessions')
                 ]);
 
-                rawStats = await statsRes.json();
                 rawRecent = await recentRes.json();
                 rawSessions = await sessionsRes.json();
 
@@ -616,12 +660,12 @@
 
         function filterLogsByDate(logs, filterType) {
             if (filterType === 'all') return logs;
-            
+
             const now = new Date();
             let limitDate = new Date();
 
             if (filterType === 'today') {
-                limitDate.setHours(0,0,0,0);
+                limitDate.setHours(0, 0, 0, 0);
             } else if (filterType === '7days') {
                 limitDate.setDate(now.getDate() - 7);
             } else if (filterType === '30days') {
@@ -634,279 +678,122 @@
             });
         }
 
+        // Normalise a raw API value, falling back to "Unknown" (never fabricate)
+        function cleanValue(v) {
+            if (v === undefined || v === null) return 'Unknown';
+            const s = String(v).trim();
+            if (!s || s === 'IP_UNKNOWN' || s.toLowerCase() === 'unknown') return 'Unknown';
+            return s;
+        }
+
+        // Keep only the real, known parts of a "City, Country" location string
+        function cleanLocation(loc) {
+            if (!loc) return 'Unknown';
+            const parts = String(loc)
+                .split(',')
+                .map(p => p.trim())
+                .filter(p => p && p.toLowerCase() !== 'unknown');
+            return parts.length ? parts.join(', ') : 'Unknown';
+        }
+
         function renderDashboard() {
             const filterType = document.getElementById('dateFilter').value;
-            
-            // Filter recent logs and sessions locally
+
             const filteredRecent = filterLogsByDate(rawRecent, filterType);
             const filteredSessions = filterLogsByDate(rawSessions, filterType);
 
-            // Re-aggregate filtered statistics
             const totalVisits = filteredRecent.length;
             const uniqueUsers = new Set(filteredRecent.map(l => l.userId)).size;
-            const pageLoads = filteredRecent.filter(l => l.trigger === 'Page Load').length;
-            const imageClicks = filteredRecent.filter(l => l.trigger === 'Image Click').length;
-            
-            // Average Time spent on page
+
             let avgTime = 0;
             const exitLogs = filteredRecent.filter(l => l.timeOnPage !== undefined && l.timeOnPage > 0);
             if (exitLogs.length > 0) {
                 avgTime = Math.round(exitLogs.reduce((acc, l) => acc + l.timeOnPage, 0) / exitLogs.length);
             }
 
-            // Update stats DOM
             document.getElementById('statVisits').textContent = totalVisits;
             document.getElementById('statUnique').textContent = uniqueUsers;
             document.getElementById('statTime').textContent = avgTime + 's';
-            document.getElementById('statClicks').textContent = imageClicks;
+            document.getElementById('statSessions').textContent = filteredSessions.length;
 
-            // Render Charts
-            renderVisitsChart(filteredRecent);
-            renderDevicesChart(filteredRecent);
-
-            // Render Details Panel lists
-            renderScrollPanel(filteredRecent);
-            renderClickedElementsPanel(filteredRecent);
-            renderActiveUsersPanel(filteredRecent);
-
-            // Render Session Profiles Table
-            renderSessionsTable(filteredSessions);
+            renderProfiles(filteredSessions);
         }
 
         function applyFilters() {
-            if (rawRecent.length > 0) {
-                renderDashboard();
-            }
+            renderDashboard();
         }
 
-        // --- CHARTS INJECTIONS ---
+        // Build one profile per visitor (userId) from real session data
+        function renderProfiles(sessions) {
+            const grid = document.getElementById('profilesGrid');
+            const countEl = document.getElementById('profilesCount');
 
-        function renderVisitsChart(logs) {
-            // Group logs by YYYY-MM-DD
-            const visitsMap = {};
-            const daysCount = 7;
-            
-            // Pre-populate last 7 days of dates
-            for (let i = daysCount - 1; i >= 0; i--) {
-                const date = new Date();
-                date.setDate(date.getDate() - i);
-                const dateStr = date.toISOString().split('T')[0];
-                visitsMap[dateStr] = 0;
-            }
-
-            logs.forEach(log => {
-                const dateStr = log.timestamp.split('T')[0];
-                if (visitsMap[dateStr] !== undefined) {
-                    visitsMap[dateStr]++;
-                } else if (document.getElementById('dateFilter').value !== '7days') {
-                    // Include any other dates if filter matches longer spans
-                    visitsMap[dateStr] = (visitsMap[dateStr] || 0) + 1;
+            const profiles = {};
+            sessions.forEach(s => {
+                const uid = s.userId || 'Unknown';
+                if (!profiles[uid]) {
+                    profiles[uid] = {
+                        userId: uid,
+                        userType: s.userType || 'unknown',
+                        ip: s.ip,
+                        location: s.location,
+                        events: 0,
+                        visits: 0,
+                        lastTime: s.startTime
+                    };
+                }
+                const p = profiles[uid];
+                p.events += (s.eventsCount || 0);
+                p.visits += 1;
+                // Prefer the most recent session's IP / location for this visitor
+                if (s.startTime && new Date(s.startTime) >= new Date(p.lastTime || 0)) {
+                    p.lastTime = s.startTime;
+                    p.ip = s.ip;
+                    p.location = s.location;
+                    p.userType = s.userType || p.userType;
                 }
             });
 
-            const labels = Object.keys(visitsMap).sort();
-            const data = labels.map(l => visitsMap[l]);
+            const list = Object.values(profiles).sort((a, b) => b.events - a.events);
+            countEl.textContent = list.length ? `${list.length} ${list.length === 1 ? 'profile' : 'profiles'}` : '';
 
-            if (visitsChartInstance) visitsChartInstance.destroy();
-
-            const ctx = document.getElementById('visitsChart').getContext('2d');
-            const primaryGlow = 'rgba(99, 102, 241, 0.2)';
-            
-            visitsChartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Visits',
-                        data: data,
-                        borderColor: '#6366f1',
-                        borderWidth: 3,
-                        backgroundColor: 'rgba(99, 102, 241, 0.05)',
-                        fill: true,
-                        tension: 0.35,
-                        pointBackgroundColor: '#6366f1',
-                        pointHoverRadius: 7
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { grid: { color: 'rgba(255, 255, 255, 0.04)' }, ticks: { color: '#94a3b8' } },
-                        y: { grid: { color: 'rgba(255, 255, 255, 0.04)' }, ticks: { color: '#94a3b8', stepSize: 1 } }
-                    }
-                }
-            });
-        }
-
-        function renderDevicesChart(logs) {
-            const devicesMap = {};
-            logs.forEach(log => {
-                const platform = log.deviceInfo?.platform || 'Unknown';
-                devicesMap[platform] = (devicesMap[platform] || 0) + 1;
-            });
-
-            const labels = Object.keys(devicesMap);
-            const data = labels.map(l => devicesMap[l]);
-
-            if (devicesChartInstance) devicesChartInstance.destroy();
-
-            const ctx = document.getElementById('devicesChart').getContext('2d');
-            devicesChartInstance = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: data,
-                        backgroundColor: ['#6366f1', '#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#94a3b8'],
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: { color: '#94a3b8', font: { family: 'Inter' }, boxWidth: 12 }
-                        }
-                    },
-                    cutout: '70%'
-                }
-            });
-        }
-
-        // --- DETAILS PANELS INJECTIONS ---
-
-        function renderScrollPanel(logs) {
-            const scrollLogs = logs.filter(l => l.trigger === 'Scroll Depth Crossing');
-            const milestones = { 25: 0, 50: 0, 75: 0, 100: 0 };
-            
-            scrollLogs.forEach(l => {
-                const ms = l.eventMetadata?.milestone;
-                if (ms && milestones[ms] !== undefined) {
-                    milestones[ms]++;
-                }
-            });
-
-            const scrollContainer = document.getElementById('scrollContainer');
-            scrollContainer.innerHTML = Object.entries(milestones).map(([m, count]) => `
-                <div class="ranked-item">
-                    <div class="rank-label">
-                        <span class="rank-number">${m}%</span>
-                        <span class="rank-text">Reached milestone depth</span>
-                    </div>
-                    <span class="rank-value">${count} users</span>
-                </div>
-            `).join('');
-        }
-
-        function renderClickedElementsPanel(logs) {
-            const clickLogs = logs.filter(l => l.trigger === 'Element Click' || l.trigger === 'Image Click');
-            const clickCounts = {};
-
-            clickLogs.forEach(log => {
-                const el = log.eventMetadata?.element || 'unknown';
-                const id = log.eventMetadata?.id ? `#${log.eventMetadata.id}` : '';
-                const txt = log.eventMetadata?.text ? ` ("${log.eventMetadata.text}")` : '';
-                const key = `${el}${id}${txt}`;
-                clickCounts[key] = (clickCounts[key] || 0) + 1;
-            });
-
-            const sorted = Object.entries(clickCounts).sort((a,b) => b[1] - a[1]).slice(0, 5);
-            const container = document.getElementById('elementsContainer');
-
-            if (sorted.length === 0) {
-                container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-sub);">No clicks registered.</div>`;
+            if (list.length === 0) {
+                grid.innerHTML = `<div class="empty-state">No profiles yet.</div>`;
                 return;
             }
 
-            container.innerHTML = sorted.map(([key, count], index) => `
-                <div class="ranked-item">
-                    <div class="rank-label">
-                        <span class="rank-number">${index + 1}</span>
-                        <span class="rank-text" style="word-break: break-all;">${key}</span>
-                    </div>
-                    <span class="rank-value">${count} clicks</span>
-                </div>
-            `).join('');
-        }
-
-        function renderActiveUsersPanel(logs) {
-            const userCounts = {};
-            logs.forEach(l => {
-                userCounts[l.userId] = (userCounts[l.userId] || 0) + 1;
-            });
-
-            const sorted = Object.entries(userCounts).sort((a,b) => b[1] - a[1]).slice(0, 5);
-            const container = document.getElementById('usersContainer');
-
-            if (sorted.length === 0) {
-                container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-sub);">No active users.</div>`;
-                return;
-            }
-
-            container.innerHTML = sorted.map(([uid, count]) => {
-                const uLogs = logs.filter(l => l.userId === uid);
-                const last = uLogs[0];
-                const loc = last?.geolocation?.city ? `${last.geolocation.city}, ${last.geolocation.country}` : 'Unknown';
+            grid.innerHTML = list.map(p => {
+                const ip = cleanValue(p.ip);
+                const loc = cleanLocation(p.location);
+                const initials = p.userId ? p.userId.replace('user_', '').substring(0, 2).toUpperCase() : 'U';
+                const shortId = p.userId.length > 22 ? p.userId.substring(0, 22) + '…' : p.userId;
+                const type = (p.userType || 'unknown').toLowerCase();
                 return `
-                    <div class="feed-item">
-                        <div class="item-info">
-                            <span class="item-title">${uid.substring(0, 15)}...</span>
-                            <span class="item-meta">📍 ${loc}</span>
-                        </div>
-                        <span class="badge badge-click">${count} events</span>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function renderSessionsTable(sessions) {
-            const tbody = document.getElementById('sessionsTableBody');
-            
-            if (sessions.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:var(--text-sub);">No sessions matching filter.</td></tr>`;
-                return;
-            }
-
-            tbody.innerHTML = sessions.map(s => {
-                const sTime = new Date(s.startTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                const initials = s.userId ? s.userId.replace('user_', '').substring(0,2).toUpperCase() : 'U';
-                return `
-                    <tr>
-                        <td>
-                            <div class="session-user">
-                                <div class="user-avatar">${initials}</div>
-                                <div style="display:flex; flex-direction:column; gap:2px;">
-                                    <span style="font-weight:600; font-size:0.85rem;">${s.userId.substring(0, 12)}...</span>
-                                    <span class="user-type-badge ${s.userType}">${s.userType}</span>
-                                </div>
+                    <div class="profile-card">
+                        <div class="profile-head">
+                            <div class="profile-avatar">${initials}</div>
+                            <div style="display:flex; flex-direction:column; gap:4px; min-width:0;">
+                                <span class="profile-id">${shortId}</span>
+                                <span class="badge-type ${type}">${type}</span>
                             </div>
-                        </td>
-                        <td style="font-family:monospace; font-size:0.8rem;">${s.ip}</td>
-                        <td>${s.location}</td>
-                        <td>${s.device}</td>
-                        <td>
-                            <span style="font-weight:500; font-size:0.85rem;">${s.browser}</span>
-                        </td>
-                        <td>
-                            <span style="font-weight:600; color:var(--primary);">${s.timeSpent}s</span>
-                        </td>
-                        <td>
-                            <span style="font-weight:600; color:var(--accent-green);">${s.maxScroll}%</span>
-                        </td>
-                        <td style="font-weight:500;">${s.eventsCount}</td>
-                        <td style="color:var(--text-sub); font-size:0.8rem;">${sTime}</td>
-                    </tr>
+                        </div>
+                        <div class="profile-rows">
+                            <div class="profile-row"><span class="label">IP Address</span><span class="value mono">${ip}</span></div>
+                            <div class="profile-row"><span class="label">Approx. Location</span><span class="value">${loc}</span></div>
+                        </div>
+                        <div class="profile-stats">
+                            <div class="profile-stat"><div class="num">${p.visits}</div><div class="lbl">Visits</div></div>
+                            <div class="profile-stat"><div class="num">${p.events}</div><div class="lbl">Events</div></div>
+                        </div>
+                    </div>
                 `;
             }).join('');
         }
 
-        // Init and refresh cycles
+        // Init and live refresh cycle
         reloadData();
         setInterval(() => reloadData(false), 5000);
+
     </script>
 </body>
 </html>
